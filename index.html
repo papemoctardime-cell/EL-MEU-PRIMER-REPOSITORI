@@ -1,32 +1,302 @@
+<!doctype html>
 <html lang="ca">
 <head>
-    <meta charset="UTF-8">
-    <title>Primer repositori de NOM COGNOM</title>
-    <style>
-        body {
-            background-color: #f0f8ff;
-            color: #333;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 50px;
-        }
-        button {
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin-top: 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resistor Color Code — Calculadora Interactiva</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#9ca3af;--glass:rgba(255,255,255,0.03)}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;background:linear-gradient(180deg,#071025 0%,#07101a 60%);color:#e6eef6}
+    .wrap{max-width:1000px;margin:28px auto;padding:20px}
+    header h1{margin:0 0 6px;font-size:20px}
+    header p{margin:0 0 18px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
+    select,input[type=text],input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit}
+    .colors-row{display:flex;gap:8px;align-items:center}
+    .band{width:64px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#07202a}
+    button{background:var(--accent);border:none;padding:10px 12px;border-radius:8px;color:#022;cursor:pointer;margin-top:10px}
+    .result{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:8px;margin-top:10px}
+    .theory{font-size:14px;line-height:1.45;color:#cfe9f0}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    .small{font-size:13px;color:var(--muted)}
+    .upload{border:1px dashed rgba(255,255,255,0.04);padding:10px;border-radius:8px;text-align:center}
+    .footer{margin-top:12px;color:var(--muted);font-size:13px}
+    @media(max-width:880px){.grid{grid-template-columns:1fr;}}
+  </style>
 </head>
 <body>
-    <p>Aquest és el primer repositori de</p>
-    <button>NOM COGNOM</button>
+  <div class="wrap">
+    <header>
+      <h1>Resistor Color Code — Calculadora Interactiva</h1>
+      <p>Calcula valors de resistors a partir de 4 colors o bé determina les franges a partir del valor i la tolerància. Inclou teoria i taula de colors.</p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <section>
+          <h3>1. Calcula a partir de 4 colors</h3>
+          <div class="small">Selecciona el color de cada franja:</div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <div style="flex:1;min-width:110px">
+              <label>Franja 1 (1a xifra)</label>
+              <select id="band1"></select>
+            </div>
+            <div style="flex:1;min-width:110px">
+              <label>Franja 2 (2a xifra)</label>
+              <select id="band2"></select>
+            </div>
+            <div style="flex:1;min-width:110px">
+              <label>Franja 3 (Multiplicador)</label>
+              <select id="band3"></select>
+            </div>
+            <div style="flex:1;min-width:110px">
+              <label>Franja 4 (Tolerància)</label>
+              <select id="band4"></select>
+            </div>
+          </div>
+          <button id="computeFromBands">Calcula valor</button>
+          <div id="bandResults" class="result" style="display:none"></div>
+        </section>
+
+        <hr style="border:none;height:10px">
+
+        <section>
+          <h3>2. Calcula colors a partir del valor</h3>
+          <label>Valor nominal (ohms)</label>
+          <input type="number" id="nominal" value="1000" min="0" step="0.01">
+          <label>Tolerància (%)</label>
+          <input type="number" id="tolerance" value="5" min="0" step="0.01">
+          <button id="computeFromValue">Calcula franges</button>
+          <div id="valueResults" class="result" style="display:none"></div>
+        </section>
+
+        <hr style="border:none;height:10px">
+
+        <section>
+          <h3>3. Imatge i prompt per a Gemini (opcional)</h3>
+          <div class="small">Si vols adjuntar la imatge de la pàgina 12 i generar un prompt per a Gemini Canvas, utilitza aquesta àrea per introduir un text d'exemple. També pots pujar la imatge per mostrar-la aquí.</div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="file" id="imageInput" accept="image/*">
+            <button id="makePrompt">Genera prompt (exemple)</button>
+          </div>
+          <pre id="promptOut" class="result" style="white-space:pre-wrap;display:none"></pre>
+        </section>
+
+      </div>
+
+      <aside class="card">
+        <h3>Taula de colors i valors</h3>
+        <div class="theory">
+          <p><strong>Franges:</strong> 1ª i 2ª = xifres; 3ª = multiplicador; 4ª = tolerància.</p>
+        </div>
+        <table>
+          <thead><tr><th>Color</th><th>Digit</th><th>Multiplicador</th><th>Tolerància</th></tr></thead>
+          <tbody id="colorTable"></tbody>
+        </table>
+
+        <div style="margin-top:10px">
+          <h4>Com funciona (breu)</h4>
+          <div class="small">Per exemple: marró, negre, vermell, or => 1 0 * 100 = 1 000 Ω; tolerància = 5%.</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h4>Vista franges</h4>
+          <div class="colors-row" id="previewBands" style="margin-top:8px"></div>
+        </div>
+
+        <div class="footer">Descarrega aquest fitxer com <strong>index.html</strong>, desa'l a la carpeta del repositori i segueix els passos per pujar-lo i activar GitHub Pages.</div>
+      </aside>
+    </div>
+
+    <section class="card" style="margin-top:14px">
+      <h3>Teoria extensa i llistat de colors</h3>
+      <div class="theory">
+        <p><strong>Resum:</strong> Els resistors de 4 franges utilitzen la primera i segona franja per a les xifres significatives, la tercera per al multiplicador (potències de 10 o valors de tipus 0.01, 0.1, etc.) i la quarta per la tolerància. Exemple de multiplicadors comuns: negre (x1), marró (x10), vermell (x100), taronja (x1k), groc (x10k), verd (x100k), blau (x1M), daurat (x0.1), platejat (x0.01).</p>
+        <ul>
+          <li>Valor nominal = (d1 * 10 + d2) * multiplicador</li>
+          <li>Valor mínim = nominal * (1 - tolerància/100)</li>
+          <li>Valor màxim = nominal * (1 + tolerància/100)</li>
+        </ul>
+      </div>
+    </section>
+
+  </div>
+
+<script>
+// Color definition
+const COLORS = [
+  {name:'black', label:'Negre', digit:0, mult:1, tol:null, hex:'#000000'},
+  {name:'brown', label:'Marró', digit:1, mult:10, tol:1, hex:'#7b3f00'},
+  {name:'red', label:'Vermell', digit:2, mult:100, tol:2, hex:'#c51b1b'},
+  {name:'orange', label:'Taronja', digit:3, mult:1000, tol:null, hex:'#ff7f11'},
+  {name:'yellow', label:'Groc', digit:4, mult:10000, tol:null, hex:'#f5d21f'},
+  {name:'green', label:'Verd', digit:5, mult:100000, tol:0.5, hex:'#1a9b4b'},
+  {name:'blue', label:'Blau', digit:6, mult:1000000, tol:0.25, hex:'#2266aa'},
+  {name:'violet', label:'Violeta', digit:7, mult:10000000, tol:0.1, hex:'#6b3fa0'},
+  {name:'grey', label:'Gris', digit:8, mult:100000000, tol:0.05, hex:'#8a8f95'},
+  {name:'white', label:'Blanc', digit:9, mult:1000000000, tol:null, hex:'#ffffff'},
+  {name:'gold', label:'Daurat', digit:null, mult:0.1, tol:5, hex:'#d4af37'},
+  {name:'silver', label:'Platejat', digit:null, mult:0.01, tol:10, hex:'#c0c0c0'},
+  {name:'none', label:'Cap', digit:null, mult:null, tol:20, hex:'#0b1220'}
+];
+
+function human(n){
+  // format with SI suffix if large
+  const units=[{v:1e9,s:'GΩ'},{v:1e6,s:'MΩ'},{v:1e3,s:'kΩ'},{v:1,s:'Ω'},{v:1e-3,s:'mΩ'}];
+  for(const u of units){
+    if(n>=u.v){
+      return (Math.round((n/u.v)*100)/100)+" "+u.s;
+    }
+  }
+  return n+" Ω";
+}
+
+// Populate selects and table
+const band1 = document.getElementById('band1');
+const band2 = document.getElementById('band2');
+const band3 = document.getElementById('band3');
+const band4 = document.getElementById('band4');
+const colorTable = document.getElementById('colorTable');
+const preview = document.getElementById('previewBands');
+
+function addOption(select, color, label){
+  const opt = document.createElement('option');
+  opt.value = color.name;
+  opt.textContent = label + (color.digit!==null ? (' — '+color.digit) : '');
+  select.appendChild(opt);
+}
+
+// For band1 and band2 only digits allowed (black to white)
+COLORS.filter(c=>c.digit!==null).forEach(c=>{addOption(band1,c,c.label);addOption(band2,c,c.label)});
+// band3 multiplicadors (include gold/silver)
+COLORS.filter(c=>c.mult!==null).forEach(c=>addOption(band3,c,c.label+' (x'+c.mult+')'));
+// band4 tolerances (include none/gold/silver/brown/green/blue/violet/grey)
+[COLORS.find(c=>c.name=='brown'),COLORS.find(c=>c.name=='red'),COLORS.find(c=>c.name=='green'),COLORS.find(c=>c.name=='blue'),COLORS.find(c=>c.name=='violet'),COLORS.find(c=>c.name=='grey'),COLORS.find(c=>c.name=='gold'),COLORS.find(c=>c.name=='silver'),COLORS.find(c=>c.name=='none')]
+  .forEach(c=>{if(c)addOption(band4,c,c.label+(c.tol!==null?(' — '+c.tol+'%'):''))});
+
+// table rows
+COLORS.forEach(c=>{
+  const tr=document.createElement('tr');
+  const td1=document.createElement('td');
+  td1.innerHTML=`<div style="width:36px;height:18px;border-radius:4px;background:${c.hex};display:inline-block;margin-right:8px;border:1px solid rgba(0,0,0,0.3)"></div>${c.label}`;
+  const td2=document.createElement('td');td2.textContent=c.digit===null?'—':c.digit;
+  const td3=document.createElement('td');td3.textContent=c.mult===null?'—':c.mult;
+  const td4=document.createElement('td');td4.textContent=c.tol===null?'—':c.tol+' %';
+  tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
+  colorTable.appendChild(tr);
+});
+
+function updatePreview(){
+  preview.innerHTML='';
+  const names=[band1.value,band2.value,band3.value,band4.value];
+  names.forEach(n=>{
+    const c = COLORS.find(cc=>cc.name===n) || {hex:'#666'};
+    const d=document.createElement('div');d.className='band';d.style.background=c.hex;d.textContent=' ';
+    preview.appendChild(d);
+  });
+}
+[band1,band2,band3,band4].forEach(s=>s.addEventListener('change',updatePreview));
+updatePreview();
+
+// Compute from bands
+document.getElementById('computeFromBands').addEventListener('click',()=>{
+  const b1 = COLORS.find(c=>c.name===band1.value);
+  const b2 = COLORS.find(c=>c.name===band2.value);
+  const b3 = COLORS.find(c=>c.name===band3.value);
+  const b4 = COLORS.find(c=>c.name===band4.value);
+  if(!b1||!b2||!b3||!b4){alert('Selecciona totes les franges');return}
+  const digits = b1.digit*10 + b2.digit;
+  const nominal = digits * b3.mult;
+  const tol = b4.tol===null?20:b4.tol;
+  const min = nominal*(1 - tol/100);
+  const max = nominal*(1 + tol/100);
+  const out = document.getElementById('bandResults');
+  out.style.display='block';
+  out.innerHTML = `<strong>Valor nominal:</strong> ${human(nominal)}<br>
+  <strong>Tolerància:</strong> ${tol}%<br>
+  <strong>Valor mínim:</strong> ${human(Math.round(min*100)/100)}<br>
+  <strong>Valor màxim:</strong> ${human(Math.round(max*100)/100)}<br>
+  <div class="small" style="margin-top:8px">(Digits: ${b1.digit} ${b2.digit}, multiplicador x${b3.mult})</div>`;
+});
+
+// Compute bands from value
+function chooseBandsFromValue(value, tol){
+  // We want (d1 d2) * mult = value where mult is from allowed mults.
+  const multCandidates = COLORS.filter(c=>c.mult!==null).map(c=>c.mult).sort((a,b)=>a-b);
+  // find best multiplier such that digits between 10 and 99
+  let best=null;let bestErr=Infinity;
+  for(const m of multCandidates){
+    const digits = value / m;
+    if(digits>=10 && digits<100){
+      const rounded = Math.round(digits);
+      const reconstructed = rounded * m;
+      const err = Math.abs(reconstructed - value);
+      if(err < bestErr){bestErr=err;best={digits:rounded,mult:m}};
+    }
+  }
+  // if none found, try normalized (use scientific approach)
+  if(!best){
+    // scale value to 2-digit mantissa
+    const exp = Math.floor(Math.log10(value)) - 1;
+    const m = Math.pow(10,exp);
+    let digits = value / m;
+    if(digits>=10 && digits<100){
+      best={digits:Math.round(digits),mult:m};
+    }
+  }
+  if(!best) return null;
+  const d1 = Math.floor(best.digits/10);
+  const d2 = best.digits%10;
+  // find color names
+  const c1 = COLORS.find(c=>c.digit===d1);
+  const c2 = COLORS.find(c=>c.digit===d2);
+  const c3 = COLORS.find(c=>c.mult===best.mult);
+  // tolerance color: choose closest available tol
+  const tolColorCandidates = COLORS.filter(c=>c.tol!==null);
+  let chosenTol = tolColorCandidates.reduce((a,b)=> Math.abs((a.tol||20)-tol) < Math.abs((b.tol||20)-tol) ? a : b);
+  return {band1:c1,band2:c2,band3:c3,band4:chosenTol,constructed: best.digits*best.mult}
+}
+
+document.getElementById('computeFromValue').addEventListener('click',()=>{
+  const val = parseFloat(document.getElementById('nominal').value);
+  const tol = parseFloat(document.getElementById('tolerance').value);
+  if(isNaN(val) || val<=0){alert('Introdueix un valor nominal vàlid');return}
+  if(isNaN(tol) || tol<0){alert('Introdueix una tolerància vàlida');return}
+  const res = chooseBandsFromValue(val,tol);
+  const out = document.getElementById('valueResults');
+  if(!res){out.style.display='block';out.innerHTML='<strong>No s'ha pogut trobar una combinació de franges exacta.</strong>';return}
+  out.style.display='block';
+  out.innerHTML = `<div style="display:flex;gap:10px;align-items:center">
+    <div class="band" style="background:${res.band1.hex}">${res.band1.digit}</div>
+    <div class="band" style="background:${res.band2.hex}">${res.band2.digit}</div>
+    <div class="band" style="background:${res.band3.hex}">x${res.band3.mult}</div>
+    <div class="band" style="background:${res.band4.hex}">${res.band4.tol?res.band4.tol+'%':'—'}</div>
+  </div>
+  <div class="small" style="margin-top:8px">Franges suggerides: ${res.band1.label}, ${res.band2.label}, ${res.band3.label}, ${res.band4.label} <br>
+  Valor reconstruït: ${human(res.constructed)} (diferència ${(Math.round((res.constructed - val)/val*10000)/100).toFixed(2)}%)</div>`;
+});
+
+// Prompt generator (example for Gemini Canvas)
+document.getElementById('makePrompt').addEventListener('click',()=>{
+  const fileInput = document.getElementById('imageInput');
+  const hasImage = fileInput.files && fileInput.files.length>0;
+  let prompt = `He pujat una imatge que correspon a la pàgina 12 del document de treball: inclou la taula de colors i una explicació breu sobre el codi de colors dels resistors. Vull que generis una aplicació interactiva per ser creada amb Gemini Canvas que faci el següent:\n\n`;
+  prompt += `1) Permeti a l'usuari seleccionar/identificar les 4 franges d'un resistor (p.ex. amb controls de color o tocant la imatge) i, a partir d'aquests 4 colors, mostri: valor nominal en ohms (format humà i en número), tolerància, valor mínim i valor màxim (amb 2 decimals).\n`;
+  prompt += `2) Permeti a l'usuari introduir un valor nominal (ohms) i una tolerància (%) i que la IA retorni la combinació de 4 colors més adequada (franges 1,2,3 i 4).\n`;
+  prompt += `3) Inclogui una secció teòrica amb la taula de colors (color, dígit, multiplicador i tolerància) i exemples de càlcul.\n`;
+  prompt += `4) L'interfície ha de ser clara: vista del resistor amb franges pintades, botons per "Calcula" i "Reseteja", i validacions d'entrada.\n`;
+  prompt += `5) Exporta el codi HTML/JS/CSS complet que l'usuari pugui descarregar com a index.html i penjar a GitHub Pages.\n\n`;
+  if(hasImage){prompt += `Adjunt: la imatge pujada (pàgina 12). Utilitza-la com a referència per extreure la taula i exemples.\n`;} else {prompt += `No he adjuntat la imatge, però la imatge pujada a la tasca (p.12) conté la taula de colors i exemples; utilitza la taula estàndard de colors per fer les taules i exemples.\n`}
+  prompt += `Respón primer amb una descripció breu de la interfície que generaràs i després amb el codi HTML complet. No facis referència a recursos externs que no siguin imatges adjuntes.\n`;
+  if(hasImage) prompt += `Assegura't de generar elements dins de Canvas que permetin pintar sobre la imatge i seleccionar regionals.\n`;
+  const out = document.getElementById('promptOut');
+  out.style.display='block';
+  out.textContent = prompt;
+});
+
+</script>
 </body>
 </html>
